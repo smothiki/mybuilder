@@ -1,0 +1,6 @@
+package: github.com/smothiki/mybuilder
+import:
+- package: github.com/codegangsta/cli
+- package: golang.org/x/crypto
+  subpackages:
+  - ssh

@@ -2,21 +2,58 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"log"
+	"os"
+	"runtime"
 
-	"github.com/gliderlabs/ssh"
+	"github.com/codegangsta/cli"
 )
 
-func main() {
-	ssh.Handle(func(s ssh.Session) {
-		fmt.Printf("Hello %s %v\n", s.User(), s.Command())
-		io.WriteString(s, fmt.Sprintf("Hello %s %v\n", s.User(), s.Command()))
+const (
+	serverConfAppName     = "deis-builder-server"
+	gitReceiveConfAppName = "deis-builder-git-receive"
+	gitHomeDir            = "/Users/smothiki/git"
+)
 
-	})
-	publicKeyOption := ssh.PublicKeyAuth(func(ctx ssh.Context, key ssh.PublicKey) bool {
-		return true // allow all keys, or use ssh.KeysEqual() to compare against known keys
-	})
-	log.Println("starting ssh server on port 2222...")
-	log.Fatal(ssh.ListenAndServe(":2222", nil, publicKeyOption))
+func init() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
+}
+
+func main() {
+
+	app := cli.NewApp()
+
+	app.Commands = []cli.Command{
+		{
+			Name:    "server",
+			Aliases: []string{"srv"},
+			Usage:   "Run the git server",
+			Action: func(c *cli.Context) {
+
+				cfg, err := Configure()
+				if err != nil {
+					fmt.Printf("config error%v\n", err)
+				}
+				err = Serve(cfg, gitHomeDir, "localhost:2223", "gitreceive")
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Println("here")
+				for {
+				}
+			},
+		},
+		{
+			Name:    "git-receive",
+			Aliases: []string{"gr"},
+			Usage:   "Run the git-receive hook",
+			Action: func(c *cli.Context) {
+
+				// if err := gitreceive.Run(cnf); err != nil {
+				// 	log.Printf("Error running git receive hook [%s]", err)
+				// 	os.Exit(1)
+			},
+		},
+	}
+
+	app.Run(os.Args)
 }
